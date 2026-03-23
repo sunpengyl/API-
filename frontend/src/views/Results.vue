@@ -1,9 +1,9 @@
 <template>
   <div class="results-container">
-    <el-card>
+    <el-card class="page-card">
       <template #header>
         <div class="card-header">
-          <span>执行历史</span>
+          <span>巡检记录</span>
         </div>
       </template>
 
@@ -41,8 +41,8 @@
         <el-button @click="resetFilters">重置</el-button>
       </div>
 
-      <el-table :data="results" style="width: 100%; margin-top: 18px" v-loading="loading">
-        <el-table-column prop="taskId" label="任务" width="200">
+      <el-table :data="results" v-loading="loading" style="width: 100%; margin-top: 18px">
+        <el-table-column prop="taskId" label="任务" width="180">
           <template #default="{ row }">
             {{ getTaskName(row.taskId) }}
           </template>
@@ -93,9 +93,9 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="viewDetail(row)">详情</el-button>
+            <button class="action-text" type="button" @click="viewDetail(row)">详情</button>
           </template>
         </el-table-column>
       </el-table>
@@ -179,11 +179,34 @@ import { onMounted, ref } from 'vue';
 import { historyApi } from '../api/history';
 import { taskApi } from '../api/task';
 
-const tasks = ref<any[]>([]);
-const results = ref<any[]>([]);
+interface TaskItem {
+  id: string;
+  name: string;
+}
+
+interface ValidationResult {
+  passed: boolean;
+  ruleId: string;
+  message: string;
+}
+
+interface InspectionResult {
+  taskId: string;
+  executedAt: string;
+  success: boolean;
+  statusCode?: number;
+  responseTime: number;
+  validationResults?: ValidationResult[];
+  error?: { message: string };
+  response?: unknown;
+  environment?: string;
+}
+
+const tasks = ref<TaskItem[]>([]);
+const results = ref<InspectionResult[]>([]);
 const loading = ref(false);
 const detailVisible = ref(false);
-const selectedResult = ref<any>(null);
+const selectedResult = ref<InspectionResult | null>(null);
 const dateRange = ref<[Date, Date] | null>(null);
 
 const filters = ref({
@@ -199,7 +222,8 @@ const pagination = ref({
 
 const loadTasks = async () => {
   try {
-    tasks.value = (await taskApi.getTasks()) as unknown as any[];
+    const data = await taskApi.getTasks();
+    tasks.value = Array.isArray(data) ? (data as TaskItem[]) : [];
   } catch (error) {
     console.error('加载任务列表失败', error);
   }
@@ -208,7 +232,7 @@ const loadTasks = async () => {
 const loadResults = async () => {
   loading.value = true;
   try {
-    const params: any = {
+    const params: Record<string, unknown> = {
       taskId: filters.value.taskId || undefined,
       success: filters.value.success,
       page: pagination.value.page,
@@ -220,7 +244,11 @@ const loadResults = async () => {
       params.endTime = dateRange.value[1].toISOString();
     }
 
-    const data: any = await historyApi.queryHistory(params);
+    const data = (await historyApi.queryHistory(params)) as {
+      results?: InspectionResult[];
+      pagination?: { total?: number };
+    };
+
     results.value = data.results || [];
     pagination.value.total = data.pagination?.total || 0;
   } catch (error) {
@@ -250,7 +278,7 @@ const resetFilters = () => {
   loadResults();
 };
 
-const viewDetail = (result: any) => {
+const viewDetail = (result: InspectionResult) => {
   selectedResult.value = result;
   detailVisible.value = true;
 };
@@ -267,7 +295,7 @@ const getStatusCodeType = (statusCode: number) => {
   return 'info';
 };
 
-const getPassedCount = (validationResults: any[]) => {
+const getPassedCount = (validationResults: ValidationResult[]) => {
   return validationResults.filter((item) => item.passed).length;
 };
 
@@ -284,6 +312,10 @@ onMounted(() => {
   padding: 2px;
 }
 
+.page-card {
+  border-radius: 18px;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -298,6 +330,20 @@ onMounted(() => {
 
 .section-block {
   margin-top: 20px;
+}
+
+.action-text {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.action-text:hover {
+  color: #1d4ed8;
 }
 
 :deep(.el-card) {

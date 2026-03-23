@@ -1,17 +1,22 @@
 <template>
   <div>
     <el-container class="layout-container">
-      <el-aside width="220px" class="sidebar">
+      <el-aside :width="sidebarWidth" class="sidebar" :class="{ collapsed: isCollapsed }">
         <div class="logo">
-          <h2>API 巡检平台</h2>
+          <h2>{{ isCollapsed ? 'API' : 'API 巡检平台' }}</h2>
         </div>
         <el-menu
           :default-active="activeMenu"
+          :collapse="isCollapsed"
           router
-          background-color="#1f2937"
+          background-color="#1c2434"
           text-color="#cbd5e1"
           active-text-color="#f8fafc"
         >
+          <el-menu-item index="/home">
+            <el-icon><House /></el-icon>
+            <span>首页</span>
+          </el-menu-item>
           <el-menu-item index="/tasks">
             <el-icon><Document /></el-icon>
             <span>任务管理</span>
@@ -29,6 +34,15 @@
             <span>健康度分析</span>
           </el-menu-item>
         </el-menu>
+
+        <div class="sidebar-footer">
+          <button class="collapse-toggle" type="button" @click="toggleSidebar">
+            <el-icon class="collapse-icon">
+              <Fold v-if="!isCollapsed" />
+              <Expand v-else />
+            </el-icon>
+          </button>
+        </div>
       </el-aside>
 
       <el-container>
@@ -59,7 +73,12 @@
     </el-container>
 
     <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
-      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="90px">
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-width="90px"
+      >
         <el-form-item label="旧密码" prop="oldPassword">
           <el-input v-model="passwordForm.oldPassword" type="password" show-password />
         </el-form-item>
@@ -81,7 +100,18 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus';
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import {
+  ArrowDown,
+  Bell,
+  DataLine,
+  Document,
+  Expand,
+  Fold,
+  House,
+  TrendCharts,
+  User,
+} from '@element-plus/icons-vue';
 import { authApi } from '../api/auth';
 
 const route = useRoute();
@@ -89,6 +119,8 @@ const router = useRouter();
 
 const activeMenu = computed(() => route.path);
 const currentTitle = computed(() => (route.meta.title as string) || 'API 巡检平台');
+const isCollapsed = ref(false);
+const sidebarWidth = computed(() => (isCollapsed.value ? '72px' : '220px'));
 
 const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
 const username = computed(() => userInfo.username || '未知用户');
@@ -138,6 +170,10 @@ const resetPasswordForm = () => {
   passwordFormRef.value?.clearValidate();
 };
 
+const toggleSidebar = () => {
+  isCollapsed.value = !isCollapsed.value;
+};
+
 const handleCommand = (command: string) => {
   if (command === 'logout') {
     handleLogout();
@@ -178,7 +214,7 @@ const handleChangePassword = async () => {
     localStorage.removeItem('user');
     router.push('/login');
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.error || error?.message || '修改密码失败');
+    ElMessage.error(error?.message || '修改密码失败');
   }
 };
 </script>
@@ -189,8 +225,12 @@ const handleChangePassword = async () => {
 }
 
 .sidebar {
-  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #1c2434;
   overflow-x: hidden;
+  transition: width 0.22s ease;
 }
 
 .logo {
@@ -198,6 +238,7 @@ const handleChangePassword = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #1c2434;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -206,6 +247,66 @@ const handleChangePassword = async () => {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+:deep(.sidebar .el-menu) {
+  border-right: 0;
+  flex: 1;
+}
+
+:deep(.sidebar .el-menu-item) {
+  margin: 4px 10px;
+  border-radius: 12px;
+}
+
+:deep(.sidebar .el-menu-item.is-active) {
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.collapse-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.collapse-icon {
+  font-size: 18px;
+}
+
+.sidebar-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 16px 16px;
+  margin-top: auto;
+  background: #1c2434;
+}
+
+.sidebar.collapsed .logo h2 {
+  font-size: 16px;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  justify-content: center;
+  padding: 12px 0 16px;
+}
+
+.sidebar.collapsed .collapse-toggle {
+  border-radius: 14px;
 }
 
 .header {

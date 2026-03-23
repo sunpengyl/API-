@@ -5,7 +5,7 @@
         <div class="card-header">
           <div>
             <div class="page-title">健康度与监控分析</div>
-            <div class="page-subtitle">用多维图表查看评分、成功率与响应时间变化</div>
+            <div class="page-subtitle">查看评分、成功率与响应时间趋势</div>
           </div>
           <div class="header-actions">
             <el-select
@@ -18,7 +18,7 @@
               <el-option label="最近 24 小时" :value="24" />
               <el-option label="最近 7 天" :value="168" />
             </el-select>
-            <el-button type="primary" @click="loadData" :loading="overviewLoading">
+            <el-button type="primary" :loading="overviewLoading" @click="loadData">
               刷新数据
             </el-button>
           </div>
@@ -32,26 +32,41 @@
             :key="item.taskId"
             shadow="hover"
             class="overview-item"
-            :class="`level-${item.level}`"
+            :class="[`level-${item.level}`, { 'is-active': selectedTaskId === item.taskId }]"
             @click="selectTask(item.taskId)"
           >
+            <div class="overview-accent"></div>
             <div class="overview-top">
-              <span class="overview-name">{{ item.taskName }}</span>
-              <el-tag :type="getLevelTagType(item.level)" effect="dark">
+              <div class="overview-title-group">
+                <span class="overview-name">{{ item.taskName }}</span>
+                <span class="overview-time">{{ formatTime(item.calculatedAt) }}</span>
+              </div>
+              <el-tag :type="getLevelTagType(item.level)" effect="light">
                 {{ getLevelText(item.level) }}
               </el-tag>
             </div>
-            <div class="overview-score">{{ item.score }}</div>
-            <div class="overview-meta">
-              <span>成功率 {{ item.successRate }}%</span>
-              <span>平均 {{ item.avgResponseTime }}ms</span>
+
+            <div class="overview-main">
+              <div class="overview-score-block">
+                <div class="overview-score-label">健康评分</div>
+                <div class="overview-score">{{ item.score }}</div>
+              </div>
+
+              <div class="overview-stats">
+                <div class="overview-stat">
+                  <span class="overview-stat-label">成功率</span>
+                  <span class="overview-stat-value">{{ item.successRate }}%</span>
+                </div>
+                <div class="overview-stat">
+                  <span class="overview-stat-label">平均响应</span>
+                  <span class="overview-stat-value">{{ item.avgResponseTime }}ms</span>
+                </div>
+                <div class="overview-stat">
+                  <span class="overview-stat-label">校验通过</span>
+                  <span class="overview-stat-value">{{ item.validationPassRate }}%</span>
+                </div>
+              </div>
             </div>
-            <el-progress
-              :percentage="Number(item.validationPassRate || 0)"
-              :show-text="false"
-              status="success"
-              class="overview-progress"
-            />
           </el-card>
         </div>
       </el-skeleton>
@@ -73,7 +88,7 @@
         </el-select>
       </div>
 
-      <div v-if="selectedTaskId" class="details-section" v-loading="detailLoading">
+      <div v-if="selectedTaskId" v-loading="detailLoading" class="details-section">
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12" :lg="6">
             <el-card class="metric-card">
@@ -84,6 +99,7 @@
               </el-tag>
             </el-card>
           </el-col>
+
           <el-col :xs="24" :sm="12" :lg="6">
             <el-card class="metric-card">
               <div class="metric-label">成功率</div>
@@ -91,6 +107,7 @@
               <div class="metric-help">校验通过率 {{ taskHealth.validationPassRate }}%</div>
             </el-card>
           </el-col>
+
           <el-col :xs="24" :sm="12" :lg="6">
             <el-card class="metric-card">
               <div class="metric-label">平均响应时间</div>
@@ -98,6 +115,7 @@
               <div class="metric-help">样本 {{ stats.count }} 次</div>
             </el-card>
           </el-col>
+
           <el-col :xs="24" :sm="12" :lg="6">
             <el-card class="metric-card">
               <div class="metric-label">极值范围</div>
@@ -295,8 +313,8 @@ const loadData = async () => {
       healthApi.getAllTasksHealth(timeRange.value),
     ]);
 
-    tasks.value = Array.isArray(tasksData) ? tasksData : [];
-    healthOverview.value = Array.isArray(overviewData) ? overviewData : [];
+    tasks.value = Array.isArray(tasksData) ? (tasksData as TaskItem[]) : [];
+    healthOverview.value = Array.isArray(overviewData) ? (overviewData as HealthOverviewItem[]) : [];
 
     if (!selectedTaskId.value && healthOverview.value.length > 0) {
       selectedTaskId.value = healthOverview.value[0].taskId;
@@ -327,6 +345,7 @@ const loadTaskDetails = async () => {
       healthApi.getTaskHealth(selectedTaskId.value, timeRange.value),
       healthApi.getResponseTimeStats(selectedTaskId.value, timeRange.value),
     ]);
+
     const historyParams = getHistoryRangeParams();
     const historyData = await healthApi.getHealthHistory(
       selectedTaskId.value,
@@ -334,9 +353,9 @@ const loadTaskDetails = async () => {
       historyParams.endTime
     );
 
-    taskHealth.value = healthData as unknown as HealthDetail;
-    stats.value = statsData as unknown as ResponseTimeStats;
-    healthHistory.value = Array.isArray(historyData) ? (historyData as unknown as HealthHistoryItem[]) : [];
+    taskHealth.value = healthData as HealthDetail;
+    stats.value = statsData as ResponseTimeStats;
+    healthHistory.value = Array.isArray(historyData) ? (historyData as HealthHistoryItem[]) : [];
 
     const overviewIndex = healthOverview.value.findIndex((item) => item.taskId === selectedTaskId.value);
     if (overviewIndex >= 0) {
@@ -390,18 +409,18 @@ const renderTrendChart = () => {
       trigger: 'axis',
       backgroundColor: 'rgba(17, 24, 39, 0.9)',
       borderWidth: 0,
-      textStyle: { color: '#f9fafb' },
+      textStyle: { color: '#f8fafc' },
     },
     legend: {
-      top: 0,
-      textStyle: { color: '#4b5563' },
+      top: 2,
+      textStyle: { color: '#475569' },
       data: ['健康评分', '成功率', '平均响应时间'],
     },
     grid: {
-      top: 48,
-      left: 72,
-      right: 86,
-      bottom: 52,
+      top: 42,
+      left: 54,
+      right: 58,
+      bottom: 32,
       containLabel: true,
     },
     xAxis: {
@@ -411,7 +430,7 @@ const renderTrendChart = () => {
       axisLine: { lineStyle: { color: '#cbd5e1' } },
       axisLabel: {
         color: '#64748b',
-        margin: 14,
+        margin: 10,
       },
     },
     yAxis: [
@@ -424,7 +443,7 @@ const renderTrendChart = () => {
         nameGap: 18,
         axisLabel: {
           color: '#64748b',
-          margin: 12,
+          margin: 10,
         },
         splitLine: { lineStyle: { color: '#e5e7eb' } },
       },
@@ -435,7 +454,7 @@ const renderTrendChart = () => {
         nameGap: 18,
         axisLabel: {
           color: '#64748b',
-          margin: 12,
+          margin: 10,
         },
         splitLine: { show: false },
       },
@@ -449,7 +468,7 @@ const renderTrendChart = () => {
         symbolSize: 8,
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(29, 78, 216, 0.25)' },
+            { offset: 0, color: 'rgba(29, 78, 216, 0.18)' },
             { offset: 1, color: 'rgba(29, 78, 216, 0.02)' },
           ]),
         },
@@ -461,15 +480,30 @@ const renderTrendChart = () => {
         smooth: true,
         symbol: 'diamond',
         symbolSize: 7,
+        lineStyle: {
+          width: 2,
+        },
         data: history.map((item) => item.successRate),
       },
       {
         name: '平均响应时间',
-        type: 'bar',
+        type: 'line',
+        smooth: true,
         yAxisIndex: 1,
-        barMaxWidth: 22,
+        symbol: 'circle',
+        symbolSize: 6,
+        lineStyle: {
+          width: 3,
+          color: '#f59e0b',
+        },
         itemStyle: {
-          borderRadius: [8, 8, 0, 0],
+          color: '#f59e0b',
+        },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(245, 158, 11, 0.16)' },
+            { offset: 1, color: 'rgba(245, 158, 11, 0.02)' },
+          ]),
         },
         data: history.map((item) => item.avgResponseTime),
       },
@@ -486,8 +520,10 @@ const renderPercentileChart = () => {
     percentileChart = echarts.init(percentileChartRef.value);
   }
 
+  const maxValue = Math.max(stats.value.max, 100) || 100;
+
   percentileChart.setOption({
-    color: ['#0f766e', '#0284c7', '#7c3aed', '#dc2626'],
+    color: ['#0f766e'],
     tooltip: {
       trigger: 'item',
       formatter: '{b}: {c} ms',
@@ -505,10 +541,10 @@ const renderPercentileChart = () => {
       },
       axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.4)' } },
       indicator: [
-        { name: '平均值', max: Math.max(stats.value.max, 100) || 100 },
-        { name: 'P50', max: Math.max(stats.value.max, 100) || 100 },
-        { name: 'P95', max: Math.max(stats.value.max, 100) || 100 },
-        { name: 'P99', max: Math.max(stats.value.max, 100) || 100 },
+        { name: '平均值', max: maxValue },
+        { name: 'P50', max: maxValue },
+        { name: 'P95', max: maxValue },
+        { name: 'P99', max: maxValue },
       ],
     },
     series: [
@@ -518,7 +554,7 @@ const renderPercentileChart = () => {
           {
             value: [stats.value.avg, stats.value.p50, stats.value.p95, stats.value.p99],
             name: '响应时间分布',
-            areaStyle: { color: 'rgba(15, 118, 110, 0.25)' },
+            areaStyle: { color: 'rgba(15, 118, 110, 0.22)' },
             lineStyle: { width: 2 },
             symbolSize: 6,
           },
@@ -587,80 +623,148 @@ onBeforeUnmount(() => {
 
 .overview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .overview-item {
+  position: relative;
   cursor: pointer;
   border-radius: 18px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+:deep(.overview-item .el-card__body) {
+  padding: 14px 16px 16px;
 }
 
 .overview-item:hover {
   transform: translateY(-3px);
+  border-color: #cbd5e1;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
 }
 
-.overview-item.level-excellent {
-  background: linear-gradient(135deg, #ecfdf5 0%, #f8fffc 100%);
+.overview-item.is-active {
+  border-color: #2563eb;
+  box-shadow: 0 18px 36px rgba(37, 99, 235, 0.14);
 }
 
-.overview-item.level-good {
-  background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+.overview-accent {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 0;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: #cbd5e1;
 }
 
-.overview-item.level-warning {
-  background: linear-gradient(135deg, #fffbeb 0%, #fffdf7 100%);
+.overview-item.level-excellent .overview-accent {
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
 }
 
-.overview-item.level-critical {
-  background: linear-gradient(135deg, #fef2f2 0%, #fff8f8 100%);
+.overview-item.level-good .overview-accent {
+  background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+}
+
+.overview-item.level-warning .overview-accent {
+  background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+}
+
+.overview-item.level-critical .overview-accent {
+  background: linear-gradient(90deg, #dc2626 0%, #f87171 100%);
 }
 
 .overview-top {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.overview-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .overview-name {
-  font-size: 14px;
-  color: #334155;
+  font-size: 13px;
+  color: #0f172a;
   font-weight: 600;
 }
 
-.overview-score {
-  margin-top: 16px;
-  font-size: 42px;
-  font-weight: 800;
-  color: #0f172a;
+.overview-time {
+  font-size: 11px;
+  color: #64748b;
 }
 
-.overview-meta {
+.overview-main {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
-  color: #64748b;
-  font-size: 12px;
+  gap: 12px;
+  margin-top: 12px;
+  align-items: flex-end;
 }
 
-.overview-progress {
-  margin-top: 14px;
+.overview-score-block {
+  min-width: 72px;
+}
+
+.overview-score-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.overview-score {
+  margin-top: 4px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.overview-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(72px, auto));
+  gap: 8px;
+  flex: 1;
+}
+
+.overview-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.overview-stat-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.overview-stat-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .toolbar {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .details-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .metric-card,
@@ -669,25 +773,33 @@ onBeforeUnmount(() => {
   border-radius: 18px;
 }
 
+:deep(.chart-card .el-card__body) {
+  padding: 8px 12px 12px;
+}
+
 .metric-card {
-  min-height: 152px;
+  min-height: 118px;
+}
+
+:deep(.metric-card .el-card__body) {
+  padding: 16px 18px;
 }
 
 .metric-label {
-  font-size: 13px;
+  font-size: 12px;
   color: #64748b;
 }
 
 .metric-value {
-  margin: 14px 0 10px;
-  font-size: 34px;
+  margin: 10px 0 8px;
+  font-size: 24px;
   font-weight: 700;
   color: #0f172a;
   line-height: 1.1;
 }
 
 .metric-help {
-  font-size: 13px;
+  font-size: 12px;
   color: #64748b;
 }
 
@@ -699,11 +811,11 @@ onBeforeUnmount(() => {
 
 .chart-host {
   width: 100%;
-  height: 380px;
+  height: 360px;
 }
 
 .chart-host-small {
-  height: 380px;
+  height: 360px;
 }
 
 @media (max-width: 768px) {
@@ -723,14 +835,18 @@ onBeforeUnmount(() => {
     width: 100% !important;
   }
 
+  .overview-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .overview-stats {
+    grid-template-columns: 1fr;
+  }
+
   .chart-host,
   .chart-host-small {
     height: 300px;
-  }
-
-  .overview-meta {
-    flex-direction: column;
-    gap: 4px;
   }
 }
 </style>
