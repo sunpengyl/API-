@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Layout from '../views/Layout.vue';
 import Login from '../views/Login.vue';
+import Signup from '../views/Signup.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -10,6 +11,12 @@ const router = createRouter({
       name: 'Login',
       component: Login,
       meta: { title: '登录', requiresAuth: false },
+    },
+    {
+      path: '/signup',
+      name: 'Signup',
+      component: Signup,
+      meta: { title: '注册', requiresAuth: false },
     },
     {
       path: '/',

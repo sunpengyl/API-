@@ -1,5 +1,13 @@
 <template>
-  <router-view />
+  <div class="app-wrapper">
+    <router-view v-slot="{ Component, route }">
+      <transition name="slide-fade">
+        <div :key="route.path" class="page-wrapper">
+          <component :is="Component" />
+        </div>
+      </transition>
+    </router-view>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -174,5 +182,48 @@
     '微软雅黑', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.app-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #fff;
+}
+
+.page-wrapper {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 路由切换动画 */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-enter-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2;
+}
+
+.slide-fade-leave-active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+}
+
+.slide-fade-enter-from {
+  transform: translateX(100%);
+}
+
+.slide-fade-leave-to {
+  transform: translateX(-100%);
 }
 </style>

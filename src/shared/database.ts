@@ -19,6 +19,7 @@ export const getDatabase = (): mysql.Pool => {
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0,
+      allowPublicKeyRetrieval: true,
     };
 
     // 调试：打印实际连接配置
