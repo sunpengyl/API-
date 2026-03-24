@@ -3,19 +3,20 @@
     <el-container class="layout-container">
       <el-aside :width="sidebarWidth" class="sidebar" :class="{ collapsed: isCollapsed }">
         <div class="logo">
-          <h2>{{ isCollapsed ? 'API' : 'API 巡检平台' }}</h2>
+          <h2>{{ isCollapsed ? 'API' : 'API 巡检与告警平台' }}</h2>
         </div>
+
         <el-menu
           :default-active="activeMenu"
           :collapse="isCollapsed"
           router
-          background-color="#1c2434"
-          text-color="#cbd5e1"
-          active-text-color="#f8fafc"
+          background-color="transparent"
+          text-color="#d9e7ff"
+          active-text-color="#ffffff"
         >
           <el-menu-item index="/home">
             <el-icon><House /></el-icon>
-            <span>首页</span>
+            <span>仪表盘</span>
           </el-menu-item>
           <el-menu-item index="/tasks">
             <el-icon><Document /></el-icon>
@@ -73,12 +74,7 @@
     </el-container>
 
     <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
-      <el-form
-        ref="passwordFormRef"
-        :model="passwordForm"
-        :rules="passwordRules"
-        label-width="90px"
-      >
+      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="90px">
         <el-form-item label="旧密码" prop="oldPassword">
           <el-input v-model="passwordForm.oldPassword" type="password" show-password />
         </el-form-item>
@@ -118,9 +114,9 @@ const route = useRoute();
 const router = useRouter();
 
 const activeMenu = computed(() => route.path);
-const currentTitle = computed(() => (route.meta.title as string) || 'API 巡检平台');
+const currentTitle = computed(() => (route.meta.title as string) || 'API 巡检与告警平台');
 const isCollapsed = ref(false);
-const sidebarWidth = computed(() => (isCollapsed.value ? '72px' : '220px'));
+const sidebarWidth = computed(() => (isCollapsed.value ? '72px' : '228px'));
 
 const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
 const username = computed(() => userInfo.username || '未知用户');
@@ -156,7 +152,6 @@ const passwordRules: FormRules = {
           callback(new Error('两次输入的密码不一致'));
           return;
         }
-
         callback();
       },
     },
@@ -222,82 +217,90 @@ const handleChangePassword = async () => {
 <style scoped>
 .layout-container {
   height: 100vh;
+  background: #eaeff6;
 }
 
 .sidebar {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: #1c2434;
+  background: linear-gradient(180deg, #12356d 0%, #1f4e9c 100%);
   overflow-x: hidden;
   transition: width 0.22s ease;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
 .logo {
-  height: 64px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1c2434;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .logo h2 {
-  color: #f8fafc;
-  font-size: 18px;
+  margin: 0;
+  color: #f8fbff;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 :deep(.sidebar .el-menu) {
   border-right: 0;
   flex: 1;
+  padding: 12px 8px;
 }
 
 :deep(.sidebar .el-menu-item) {
-  margin: 4px 10px;
-  border-radius: 12px;
+  height: 48px;
+  margin: 8px 6px;
+  border-radius: 14px;
+  font-size: 16px;
+}
+
+:deep(.sidebar .el-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 :deep(.sidebar .el-menu-item.is-active) {
-  background: rgba(59, 130, 246, 0.16);
+  background: linear-gradient(135deg, #4a8ef5 0%, #2f6fe0 100%);
+  box-shadow: 0 12px 24px rgba(29, 88, 189, 0.28);
+}
+
+.sidebar-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 14px 16px;
+  margin-top: auto;
 }
 
 .collapse-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-left: auto;
+  width: 42px;
+  height: 42px;
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #cbd5e1;
+  color: #d9e7ff;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .collapse-toggle:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8fafc;
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .collapse-icon {
   font-size: 18px;
 }
 
-.sidebar-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 14px 16px 16px;
-  margin-top: auto;
-  background: #1c2434;
-}
-
 .sidebar.collapsed .logo h2 {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .sidebar.collapsed .sidebar-footer {
@@ -305,13 +308,12 @@ const handleChangePassword = async () => {
   padding: 12px 0 16px;
 }
 
-.sidebar.collapsed .collapse-toggle {
-  border-radius: 14px;
-}
-
 .header {
-  background-color: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  margin: 8px 8px 0 8px;
+  height: 60px;
+  border-radius: 18px 18px 0 0;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #edf3ff;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -320,12 +322,12 @@ const handleChangePassword = async () => {
 
 .header-title {
   font-size: 18px;
-  font-weight: 600;
-  color: #111827;
+  font-weight: 700;
+  color: #20345c;
 }
 
 .header-user {
-  color: #4b5563;
+  color: #4f6289;
 }
 
 .user-info {
@@ -336,7 +338,9 @@ const handleChangePassword = async () => {
 }
 
 .main-content {
-  background-color: #f3f4f6;
-  padding: 10px 12px;
+  margin: 0 8px 8px 8px;
+  padding: 10px;
+  border-radius: 0 0 18px 18px;
+  background: rgba(255, 255, 255, 0.96);
 }
 </style>

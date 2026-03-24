@@ -1,7 +1,7 @@
 <template>
   <div class="app-wrapper">
     <router-view v-slot="{ Component, route }">
-      <transition name="slide-fade">
+      <transition :name="getTransitionName(route.path)" mode="out-in">
         <div :key="route.path" class="page-wrapper">
           <component :is="Component" />
         </div>
@@ -11,7 +11,12 @@
 </template>
 
 <script setup lang="ts">
-// App根组件
+const getTransitionName = (path: string) => {
+  if (path === '/login' || path === '/signup') {
+    return 'fade';
+  }
+  return '';
+};
 </script>
 
 <style>
@@ -20,7 +25,6 @@
   padding: 0;
   box-sizing: border-box;
 }
-
 
 :root {
   --el-color-primary: #005daa;
@@ -72,7 +76,6 @@
   border-color: var(--el-color-primary);
 }
 
-/* el-table 公共样式 */
 .el-table {
   color: #1f1f1f;
 }
@@ -95,7 +98,6 @@
   height: 38px;
 }
 
-/* 圆点状态文字（6*6） */
 .status-dot {
   display: inline-flex;
   align-items: center;
@@ -135,7 +137,6 @@
   color: #db3700;
 }
 
-/* 操作列文字颜色（覆盖状态类用） */
 .op-text-initial {
   color: #005daa;
   font-size: 14px;
@@ -146,7 +147,6 @@
   font-size: 14px;
 }
 
-/* 副标题公共样式 */
 .label-title {
   display: inline-flex;
   align-items: center;
@@ -197,33 +197,13 @@
   min-height: 100vh;
 }
 
-/* 路由切换动画 */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.22s ease;
 }
 
-.slide-fade-enter-active {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 2;
-}
-
-.slide-fade-leave-active {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1;
-}
-
-.slide-fade-enter-from {
-  transform: translateX(100%);
-}
-
-.slide-fade-leave-to {
-  transform: translateX(-100%);
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

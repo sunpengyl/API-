@@ -28,7 +28,7 @@ const router = createRouter({
           path: 'home',
           name: 'Home',
           component: () => import('../views/Home.vue'),
-          meta: { title: '首页', requiresAuth: true },
+          meta: { title: '仪表盘', requiresAuth: true },
         },
         {
           path: 'tasks',

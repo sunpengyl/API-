@@ -141,7 +141,7 @@ const handleLogin = async () => {
   justify-content: center;
   padding: 60px;
   position: relative;
-  border-radius: 0 0 44% 0 / 0 0 140% 0;
+  border-radius: 0 0 50% 0 / 0 0 120% 0;
 }
 
 .illustration-content {
